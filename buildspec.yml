@@ -1,0 +1,33 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-east-1
+    IMAGE_REPO_NAME: postex-logistics-prod-api
+    IMAGE_TAG: latest
+
+phases:
+
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 433154992048.dkr.ecr.us-east-1.amazonaws.com
+
+  build:
+    commands:
+      - echo Build started
+      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG 433154992048.dkr.ecr.us-east-1.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+
+  post_build:
+    commands:
+      - echo Pushing image to ECR
+      - docker push 433154992048.dkr.ecr.us-east-1.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+
+      - echo Updating Kubernetes deployment
+      - aws eks update-kubeconfig --region us-east-1 --name postex-logistics-prod-eks
+      - kubectl set image deployment/demo-nodejs-app demo-nodejs-app=433154992048.dkr.ecr.us-east-1.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+
+artifacts:
+  files:
+    - '**/*'
