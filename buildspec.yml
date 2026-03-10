@@ -1,33 +1,35 @@
 version: 0.2
 
-env:
-  variables:
-    AWS_DEFAULT_REGION: us-east-1
-    IMAGE_REPO_NAME: postex-logistics-prod-api
-    IMAGE_TAG: latest
-
 phases:
 
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 433154992048.dkr.ecr.us-east-1.amazonaws.com
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - REPOSITORY_URI=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY
+
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION \
+        | docker login --username AWS \
+        --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
+      - echo Build started on `date`
+      - echo Image tag will be $IMAGE_TAG
 
   build:
     commands:
-      - echo Build started
-      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
-      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG 433154992048.dkr.ecr.us-east-1.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - echo Building Docker image...
+      - docker build -t $SERVICE_NAME:$IMAGE_TAG .
+      - docker tag $SERVICE_NAME:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo Pushing image to ECR
-      - docker push 433154992048.dkr.ecr.us-east-1.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - echo Pushing Docker image...
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
 
-      - echo Updating Kubernetes deployment
-      - aws eks update-kubeconfig --region us-east-1 --name postex-logistics-prod-eks
-      - kubectl set image deployment/demo-nodejs-app demo-nodejs-app=433154992048.dkr.ecr.us-east-1.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - echo Writing image definition file...
+      - printf '[{"name":"%s","imageUri":"%s"}]' "$SERVICE_NAME" "$REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
 
 artifacts:
   files:
-    - '**/*'
+    - imagedefinitions.json
