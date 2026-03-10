@@ -20,6 +20,6 @@ spec:
     spec:
       containers:
         - name: demo-nodejs-app
-          image: 433154992048.dkr.ecr.us-east-1.amazonaws.com/postex-logistics-prod-api:latest
+          image: IMAGE_URI_PLACEHOLDER
           ports:
             - containerPort: 3000
