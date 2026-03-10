@@ -1,0 +1,41 @@
+version: 0.2
+
+phases:
+
+  pre_build:
+    commands:
+
+      - echo Installing kubectl
+      - curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.33.0/2024-09-20/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl
+      - mv ./kubectl /usr/local/bin
+
+      - echo Updating kubeconfig
+      - aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_DEFAULT_REGION
+
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+
+      - IMAGE_URI=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - echo Using image $IMAGE_URI
+
+      - sed -i "s|IMAGE_URI_PLACEHOLDER|$IMAGE_URI|g" k8s/deployment.yml
+
+
+  build:
+    commands:
+
+      - echo Applying Kubernetes manifests
+
+      - kubectl apply -f k8s/namespace.yml
+      - kubectl apply -f k8s/deployment.yml
+      - kubectl apply -f k8s/service.yml
+      - kubectl apply -f k8s/ingress.yml
+
+
+  post_build:
+    commands:
+
+      - echo Deployment completed
+      - kubectl get pods -A
