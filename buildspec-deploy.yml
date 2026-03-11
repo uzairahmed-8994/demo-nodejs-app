@@ -5,13 +5,17 @@ phases:
   pre_build:
     commands:
 
-      - echo Installing kubectl
-      - curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.33.0/2024-09-20/bin/linux/amd64/kubectl
-      - chmod +x ./kubectl
-      - mv ./kubectl /usr/local/bin
+      # - echo Installing kubectl
+      # - curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.33.0/2024-09-20/bin/linux/amd64/kubectl
+      # - chmod +x ./kubectl
+      # - mv ./kubectl /usr/local/bin
+
 
       - echo Updating kubeconfig
+
       - aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_DEFAULT_REGION
+      - kubectl version --client
+
 
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
