@@ -1,6 +1,5 @@
 # Use official Node runtime
-FROM node:20-alpine3.19
-
+FROM public.ecr.aws/docker/library/node:20-alpine3.19
 # Create app directory
 WORKDIR /app
 
