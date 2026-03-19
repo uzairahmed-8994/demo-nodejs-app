@@ -2,8 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: demo-nodejs-app
-  labels:
-    app: demo-nodejs-app
+  namespace: cicd-demo
 
 spec:
   replicas: 2

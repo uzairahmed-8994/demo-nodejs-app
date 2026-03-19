@@ -38,7 +38,7 @@ phases:
       - kubectl apply -f ${MANIFEST_PATH}/namespace.yml
       - kubectl apply -f ${MANIFEST_PATH}/deployment.yml
       - kubectl apply -f ${MANIFEST_PATH}/service.yml
-      - kubectl apply -f ${MANIFEST_PATH}/ingress.yml
+      # - kubectl apply -f ${MANIFEST_PATH}/ingress.yml
 
   post_build:
     commands:
